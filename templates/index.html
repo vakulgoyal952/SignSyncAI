@@ -1,0 +1,104 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Camera App</title>
+   <style>
+       #info_box {
+           margin-top: 20px;
+           padding: 10px;
+           border: 1px solid #ccc;
+           background-color: #f9f9f9;
+           text-align: center;
+       }
+       #output_box {
+           margin-top: 20px;
+           padding: 10px;
+           border: 1px solid #ccc;
+           background-color: #f9f9f9;
+           text-align: left;
+           height: 200px; /* Set a fixed height for the output box */
+           overflow-y: auto; /* Add a vertical scrollbar when content exceeds the height */
+       }
+   </style>
+</head>
+<body>
+   <button onclick="startCamera()">Start Camera</button>
+   <br>
+   <img id="video_feed" width="640" height="480" src="/video_feed"> <!-- Update the src attribute -->
+   <div id="info_box">Input</div>
+   <div id="output_box">output</div>
+
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+   <script>
+       document.addEventListener('DOMContentLoaded', function () {
+           var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+           socket.on('predicted_value', function (data) {
+               // Update the content of the info_box div with the received predicted value
+               document.getElementById('info_box').innerText = data.value;
+           });
+
+           socket.on('output_from_socket', function (data) {
+               // Animate the content of the output_box div with a typewriter effect
+               animateTypewriter(data.input);
+           });
+       });
+
+       function startCamera() {
+           fetch('/start_camera')  
+               .then(response => response.json())
+               .then(data => {
+                   if (data.success) {
+                       console.log('Camera started successfully');
+                       startVideoFeed(); // Call function to start updating video feed
+                   } else {
+                       console.error('Error starting camera:', data.error);
+                   }
+               })
+               .catch(error => {
+                   console.error('Error starting camera:', error);
+               });
+       }
+
+       function startVideoFeed() {
+           // Get the video feed element
+           const videoFeed = document.getElementById('video_feed');
+
+           // Function to continuously update video feed
+           function updateVideoFeed() {
+               videoFeed.src = '/video_feed?' + new Date().getTime();  // Add timestamp to avoid caching
+               requestAnimationFrame(updateVideoFeed);  // Schedule the next update
+           }
+
+           // Start the initial update
+           updateVideoFeed();
+       }
+       // Function to animate text with a typewriter effect
+       function animateTypewriter(text) {
+           const outputBox = document.getElementById('output_box');
+           outputBox.innerHTML = ''; // Clear existing content
+
+           // Split the text into an array of words
+           const words = text.split(' ');
+
+           // Counter for word index
+           let wordIndex = 0;
+
+           // Interval to show words one by one
+           const interval = setInterval(function () {
+               if (wordIndex < words.length) {
+                   // Append the next word with a space
+                   outputBox.innerHTML += words[wordIndex] + ' ';
+                   wordIndex++;
+               } else {
+                   // Clear the interval when all words are displayed
+                   clearInterval(interval);
+               }
+           }, 200); // Adjust the interval duration as needed
+       }
+   </script>
+</body>
+</html>

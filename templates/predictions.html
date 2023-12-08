@@ -1,0 +1,31 @@
+<!-- predictions.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictions</title>
+</head>
+<body>
+    <h1>Predictions:</h1>
+    <div id="predictions"></div>
+
+    <script>
+        const predictionsDiv = document.getElementById('predictions');
+        const eventSource = new EventSource('/predictions_feed');
+
+        eventSource.onmessage = function(event) {
+            const predictedValue = event.data;
+            const newLine = document.createElement('div');
+            newLine.textContent = predictedValue;
+            predictionsDiv.appendChild(newLine);
+        };
+
+        eventSource.onerror = function(error) {
+            console.error('EventSource failed:', error);
+            eventSource.close();
+        };
+    </script>
+</body>
+</html>
+
